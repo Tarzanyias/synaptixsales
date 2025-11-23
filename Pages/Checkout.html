@@ -66,20 +66,20 @@
             <div class="lg:col-span-2 bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-100">
                 <h2 class="text-xl font-bold text-gray-700 mb-6 border-b pb-3">Shipping Address</h2>
                 
-                <!-- The form is used here just to collect input data, its submission is handled by JS -->
+                <!-- The form now uses an async submit handler to send data via FormSubmit API -->
                 <form id="shippingForm" onsubmit="handlePaymentTransition(event)">
                     
                     <!-- Full Name & Email -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                            <input type="text" id="full_name" name="full_name" required 
+                            <input type="text" id="full_name" name="Full Name" required 
                                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150" 
                                 placeholder="Jane Doe">
                         </div>
                         <div>
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-                            <input type="email" id="email" name="email" required 
+                            <input type="email" id="email" name="Email" required 
                                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150" 
                                 placeholder="jane.doe@example.com">
                         </div>
@@ -88,7 +88,7 @@
                     <!-- Address Line 1 -->
                     <div class="mb-6">
                         <label for="address_line1" class="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
-                        <input type="text" id="address_line1" name="address_line1" required 
+                        <input type="text" id="address_line1" name="Address Line 1" required 
                             class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150" 
                             placeholder="Street address, building name, P.O. box">
                     </div>
@@ -96,7 +96,7 @@
                     <!-- Address Line 2 (Optional) -->
                     <div class="mb-6">
                         <label for="address_line2" class="block text-sm font-medium text-gray-700 mb-1">Address Line 2 (Optional)</label>
-                        <input type="text" id="address_line2" name="address_line2" 
+                        <input type="text" id="address_line2" name="Address Line 2" 
                             class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150" 
                             placeholder="Apartment, suite, unit, floor">
                     </div>
@@ -106,19 +106,19 @@
                         
                         <div>
                             <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                            <input type="text" id="city" name="city" required 
+                            <input type="text" id="city" name="City" required 
                                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150">
                         </div>
                         
                         <div>
                             <label for="state_province" class="block text-sm font-medium text-gray-700 mb-1">State / Province *</label>
-                            <input type="text" id="state_province" name="state_province" required 
+                            <input type="text" id="state_province" name="State/Province" required 
                                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150">
                         </div>
 
                         <div>
                             <label for="zip_code" class="block text-sm font-medium text-gray-700 mb-1">ZIP / Postal Code *</label>
-                            <input type="text" id="zip_code" name="zip_code" required 
+                            <input type="text" id="zip_code" name="ZIP/Postal Code" required 
                                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150">
                         </div>
                     </div>
@@ -126,7 +126,7 @@
                     <!-- Country -->
                     <div class="mb-8">
                         <label for="country" class="block text-sm font-medium text-gray-700 mb-1">Country / Region *</label>
-                        <select id="country" name="country" required 
+                        <select id="country" name="Country" required 
                             class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-primary focus:border-primary transition duration-150 appearance-none">
                             <option value="" disabled selected>-- Select a Country --</option>
                             <option value="US">United States</option>
@@ -143,6 +143,11 @@
                         Continue to Payment
                         <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </button>
+
+                    <!-- Confirmation Message (Hidden by default) -->
+                    <div id="submissionMessage" class="hidden mt-4 p-4 bg-green-100 text-green-700 rounded-lg text-center font-medium">
+                        Shipping details confirmed. Redirecting to payment...
+                    </div>
                 </form>
                 
                 <!-- PayPal Button Integration (Hidden by Default) -->
@@ -181,45 +186,62 @@
     </div>
 
     <script>
-        function handlePaymentTransition(event) {
-            event.preventDefault(); // Stop the form from submitting normally
+        // The URL for the FormSubmit AJAX endpoint, using your email.
+        const FORMSUBMIT_URL = "https://formsubmit.co/ajax/synaptix@mail.com";
+
+        async function handlePaymentTransition(event) {
+            event.preventDefault(); // Stop normal form submission
 
             const form = document.getElementById('shippingForm');
             const continueButton = document.getElementById('continueButton');
             const paypalButtonContainer = document.getElementById('paypalButtonContainer');
-            
-            // 1. Build the email body
+            const submissionMessage = document.getElementById('submissionMessage');
+
+            // 1. Prepare Data for Internal Submission
             const formData = new FormData(form);
-            let emailBody = "Shipping Information:\n\n";
-            for (let [name, value] of formData.entries()) {
-                // Format the field names nicely for the email
-                const readableName = name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                emailBody += `${readableName}: ${value}\n`;
+            
+            // Add FormSubmit specific fields for a clean email submission
+            formData.append('_subject', 'New Order Shipping Details');
+            // Adding a summary to the data to ensure it appears in the email
+            formData.append('Order Summary', 'Item: $14.99, Shipping: FREE, Total: $14.99');
+            
+            // Show loading state
+            continueButton.innerHTML = `<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356-2A8.001 8.001 0 004.582 9m0 0H9m11.356 0h.582m-4.789 2.855L17.5 21M9.4 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Sending Address...`;
+            continueButton.disabled = true;
+
+            try {
+                // 2. Send Data using Fetch (Internal/Server-less Email)
+                const response = await fetch(FORMSUBMIT_URL, {
+                    method: 'POST',
+                    body: formData,
+                });
+                
+                // Check if the form submission was successful (FormSubmit returns JSON)
+                if (response.ok) {
+                    // 3. Address Sent: Hide the 'Continue to Payment' button
+                    continueButton.classList.add('hidden');
+                    
+                    // Show confirmation message
+                    submissionMessage.classList.remove('hidden');
+
+                    // 4. Wait 3 seconds and show the PayPal button
+                    setTimeout(() => {
+                        submissionMessage.classList.add('hidden');
+                        paypalButtonContainer.classList.remove('hidden');
+                    }, 3000); 
+
+                } else {
+                    // Handle non-successful FormSubmit response (e.g., rate limit)
+                    throw new Error('Form submission failed on the server.');
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                // Revert button state and show error (using the button area for message)
+                continueButton.innerHTML = `Error sending address. Please refresh and try again.`;
+                continueButton.classList.remove('bg-primary');
+                continueButton.classList.add('bg-red-500');
+                continueButton.disabled = false; // Allow retry
             }
-            
-            // Append Order Summary (Hardcoded based on the sidebar)
-            emailBody += "\n----------------------\n";
-            emailBody += "Order Summary:\n";
-            emailBody += "Subtotal (1 item): $14.99\n";
-            emailBody += "Shipping Estimate: FREE\n";
-            emailBody += "Order Total: $14.99\n";
-
-
-            // 2. Construct and trigger mailto link
-            const subject = encodeURIComponent("New Checkout Submission");
-            const body = encodeURIComponent(emailBody);
-            const mailtoLink = `mailto:synaptix@mail.com?subject=${subject}&body=${body}`;
-            
-            // Open the mail client. This is the first action.
-            window.location.href = mailtoLink; 
-            
-            // 3. Hide the 'Continue to Payment' button
-            continueButton.classList.add('hidden');
-            
-            // 4. Wait 3 seconds and show the PayPal button
-            setTimeout(() => {
-                paypalButtonContainer.classList.remove('hidden');
-            }, 3000); // 3000 milliseconds = 3 seconds
         }
     </script>
 </body>
