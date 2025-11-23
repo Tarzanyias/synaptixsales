@@ -224,10 +224,10 @@
             const email = document.getElementById('contact-email').value;
             const message = document.getElementById('contact-message').value;
             
-            // --- UPDATED EMAIL ADDRESSES HERE ---
-            const targetEmail = 'synaptixshipping@gmail.com';
-            const apiUrl = `https://formsubmit.co/ajax/${targetEmail}`;
-            // ------------------------------------
+            // --- UPDATED to use the provided FormSubmit hash/string ---
+            const formSubmitHash = '80f7e02a47ee4e2ff6ffd76072398492';
+            const apiUrl = `https://formsubmit.co/ajax/${formSubmitHash}`;
+            // ---------------------------------------------------------
 
             // 2. Set loading state
             button.disabled = true;
@@ -239,7 +239,7 @@
                 name: name,
                 email: email,
                 message: message,
-                _subject: `New Contact from Synaptix Landing Page (${targetEmail})`, // Subject for the received email
+                _subject: `New Contact Form Submission from Synaptix`, // Generic subject
                 _replyto: email // Set reply-to header
             };
 
